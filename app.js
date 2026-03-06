@@ -148,14 +148,6 @@ function handleGlobalKeydown(event) {
     return;
   }
 
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    if (state.sessionRunning) {
-      quickEndSession();
-    }
-    return;
-  }
-
   if (!state.sessionRunning) return;
 
   if (event.key === 'Enter') {
@@ -163,15 +155,15 @@ function handleGlobalKeydown(event) {
     autoFillCurrentWord();
     return;
   }
+  if (event.key.toLowerCase() === 'Escape') {
+    event.preventDefault();
+    replayCurrentWord();
+    return;
+  }
   if (event.key === 'Backspace') {
     event.preventDefault();
     state.typedValue = state.typedValue.slice(0, -1);
     renderTypedValue();
-    return;
-  }
-  if (event.key === ';') {
-    event.preventDefault();
-    replayCurrentWord();
     return;
   }
   if (event.key === ' ') {
@@ -313,7 +305,7 @@ function beginSessionNow() {
   updateStaticStats();
   updateProgress();
   setStatus('Listening');
-  elements.targetHint.textContent = 'Listen to the word, type it, then press Space. Use ; to repeat and Esc to end.';
+  elements.targetHint.textContent = 'Listen to the word, type it, then press Space.';
   renderTypedValue();
   speakCurrentWord();
 }
@@ -342,12 +334,14 @@ function renderTypedValue() {
 
   const correctPart = escapeHtml(target.slice(0, correctPrefixLength));
   const wrongTypedPart = escapeHtml(typed.slice(correctPrefixLength));
+  const pendingPart = escapeHtml(target.slice(Math.min(typed.length, target.length)));
   const exact = typed === target;
 
   elements.typedWord.innerHTML = [
     correctPart ? `<span class="typed-correct">${correctPart}</span>` : '',
     wrongTypedPart ? `<span class="typed-wrong">${wrongTypedPart}</span>` : '',
-  ].join('') || '<span class="typed-pending">&nbsp;</span>';
+    pendingPart ? `<span class="typed-pending">${pendingPart}</span>` : '',
+  ].join('') || safeTyped || safeTarget;
 
   if (exact) {
     elements.typedWord.className = 'typed-word success-outline';
@@ -402,12 +396,7 @@ function advanceWord() {
   if (state.settings.autoSpeakNext) speakCurrentWord();
 }
 
-function quickEndSession() {
-  if (!state.sessionRunning) return;
-  finishSession('Ended early');
-}
-
-function finishSession(endStatus = 'Finished') {
+function finishSession() {
   stopSpeech();
   state.sessionRunning = false;
   state.sessionEndMs = performance.now();
@@ -424,10 +413,10 @@ function finishSession(endStatus = 'Finished') {
   elements.targetHint.textContent = `Finished. Gross ${(grossMs / 1000).toFixed(2)}s · TTS removed ${(state.ttsDurationMs / 1000).toFixed(2)}s · replay penalty ${(state.replayPenaltyMsAccumulated / 1000).toFixed(2)}s.`;
   elements.speedText.textContent = `${speed.toFixed(2)} ${state.settings.speedUnit.toUpperCase()}`;
   elements.timerText.textContent = `${(netMs / 1000).toFixed(2)}s`;
-  setStatus(endStatus);
+  setStatus('Finished');
   updateProgress();
   updateStaticStats();
-  renderResults(speed, accuracy, grossMs, netMs, endStatus);
+  renderResults(speed, accuracy, grossMs, netMs);
 }
 
 function calculateSpeed(netMs) {
@@ -545,10 +534,9 @@ function getMostCommonMisspellingLabel() {
   return bestKey;
 }
 
-function renderResults(speed, accuracy, grossMs, netMs, endStatus = 'Finished') {
+function renderResults(speed, accuracy, grossMs, netMs) {
   const unit = state.settings.speedUnit.toUpperCase();
   const summary = [
-    ['Session status', endStatus],
     ['Speed', `${speed.toFixed(2)} ${unit}`],
     ['Accuracy', `${accuracy.toFixed(2)}%`],
     ['Words completed', `${state.countedWords} / ${state.sessionWords.length}`],
