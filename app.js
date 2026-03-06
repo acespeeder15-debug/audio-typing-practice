@@ -78,6 +78,7 @@ const state = {
   repeatCount: 0,
   restartCount: 0,
   misspellings: new Map(),
+  currentSpeechCountsForTiming: false,
 };
 
 init();
@@ -244,6 +245,7 @@ function resetStateForNewSession() {
     currentUtterance: null,
     repeatCount: 0,
     misspellings: new Map(),
+    currentSpeechCountsForTiming: false,
   });
 }
 
@@ -312,7 +314,7 @@ function beginSessionNow() {
   setStatus('Listening');
   elements.targetHint.textContent = 'Listen to the word, type it, then press Space.';
   renderTypedValue();
-  speakCurrentWord();
+  speakCurrentWord(true);
 }
 
 function renderTypedValue() {
@@ -323,7 +325,8 @@ function renderTypedValue() {
   const safeTarget = escapeHtml(target);
 
   if (!typed) {
-    elements.typedWord.innerHTML = '<span class="typed-pending">…</span>';
+    elements.typedWord.className = 'typed-word';
+    elements.typedWord.innerHTML = target ? `<span class="typed-pending">${escapeHtml(target)}</span>` : '<span class="typed-pending"> </span>' ;
     setStatus('Listening');
     return;
   }
@@ -398,7 +401,7 @@ function advanceWord() {
 
   updateProgress();
   renderTypedValue();
-  if (state.settings.autoSpeakNext) speakCurrentWord();
+  if (state.settings.autoSpeakNext) speakCurrentWord(true);
 }
 
 function finishSession() {
@@ -471,13 +474,14 @@ function replayCurrentWord() {
   state.repeatCount += 1;
   state.replayPenaltyMsAccumulated += Number(state.settings.replayPenaltyMs) || 0;
   updateStaticStats();
-  speakCurrentWord();
+  speakCurrentWord(false);
 }
 
-function speakCurrentWord() {
+function speakCurrentWord(countForTiming = false) {
   const word = currentWord();
   if (!word || !('speechSynthesis' in window)) return;
   stopSpeech();
+  state.currentSpeechCountsForTiming = countForTiming;
 
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.rate = state.settings.voiceRate;
@@ -494,14 +498,18 @@ function speakCurrentWord() {
   };
   utterance.onend = () => {
     if (state.speechStartMs > 0) {
-      state.ttsDurationMs += performance.now() - state.speechStartMs;
+      if (state.currentSpeechCountsForTiming) {
+        state.ttsDurationMs += performance.now() - state.speechStartMs;
+        updateStaticStats();
+      }
       state.speechStartMs = 0;
-      updateStaticStats();
+      state.currentSpeechCountsForTiming = false;
     }
     if (state.typedValue === '') setStatus('Type the word');
   };
   utterance.onerror = () => {
     state.speechStartMs = 0;
+    state.currentSpeechCountsForTiming = false;
     setStatus('Speech error');
   };
 
@@ -513,6 +521,7 @@ function stopSpeech() {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   state.currentUtterance = null;
   state.speechStartMs = 0;
+  state.currentSpeechCountsForTiming = false;
 }
 
 function countCorrectPrefix(typed, target) {
