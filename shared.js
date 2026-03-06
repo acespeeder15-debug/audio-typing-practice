@@ -90,31 +90,6 @@ export function parseWordList(raw) {
     .filter(Boolean);
 }
 
-function extractMonkeytypeWords(raw) {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (parsed && Array.isArray(parsed.words)) {
-      return parsed.words
-        .map((word) => String(word).trim())
-        .filter(Boolean);
-    }
-  } catch {
-    // Fall through to regex-based extraction.
-  }
-
-  const wordsBlockMatch = trimmed.match(/"words"\s*:\s*\[([\s\S]*?)\]/);
-  if (!wordsBlockMatch) return null;
-
-  const extracted = [...wordsBlockMatch[1].matchAll(/"([^"\\]*(?:\\.[^"\\]*)*)"/g)]
-    .map((match) => match[1].replaceAll('\\"', '"').trim())
-    .filter(Boolean);
-
-  return extracted.length > 0 ? extracted : null;
-}
-
 export function parseWordListFlexible(raw, mode = 'word') {
   const text = raw.trim();
   if (!text) return [];
@@ -125,9 +100,6 @@ export function parseWordListFlexible(raw, mode = 'word') {
       .map((line) => line.trim())
       .filter(Boolean);
   }
-
-  const monkeytypeWords = extractMonkeytypeWords(text);
-  if (monkeytypeWords) return monkeytypeWords;
 
   return parseWordList(raw);
 }

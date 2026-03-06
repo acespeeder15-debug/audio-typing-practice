@@ -16,15 +16,15 @@ A static GitHub Pages-ready audio dictation trainer built with plain HTML, CSS, 
 - replay button and `;` hotkey
 - replay penalty system
 - `Tab` quick start / restart
-- `Enter` auto-fill current word and exclude it from speed
 - `Escape` quick end session
-- live character-by-character colored feedback with unwritten letters hidden
+- `Enter` auto-fill current word and exclude it from speed
+- live character-by-character colored feedback
 - end-of-session stats screen
 - common misspelling tracking per session
 - import/export settings
 - local settings + word list persistence
 - WPM or CPM
-- TTS speaking time removed from timing
+- only the first play of each word has TTS time removed from timing
 
 ## Files
 

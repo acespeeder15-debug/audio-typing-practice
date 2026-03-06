@@ -76,7 +76,7 @@ button.primary {
 }
 .typed-correct { color: var(--correct-color); }
 .typed-wrong { color: var(--wrong-color); }
-.typed-pending { color: transparent; opacity: 0; user-select: none; }
+.typed-pending { color: var(--font-color); opacity: .82; }
 .success-outline { text-shadow: 0 0 24px rgba(114, 227, 142, .18); }
 .error-outline { text-shadow: 0 0 24px rgba(255, 107, 107, .16); }
 .target-hint { opacity: .8; }
@@ -117,3 +117,5 @@ kbd { background: rgba(255,255,255,.12); border-radius: 6px; padding: .1rem .42r
   .practice-stage { min-height: auto; }
   .typed-word { max-width: 95%; }
 }
+
+.typed-hidden { color: transparent; opacity: 0; user-select: none; }
