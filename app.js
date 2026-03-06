@@ -148,14 +148,6 @@ function handleGlobalKeydown(event) {
     return;
   }
 
-  if (event.key === 'Escape') {
-    if (state.sessionRunning || state.countdownActive) {
-      event.preventDefault();
-      endSessionEarly();
-    }
-    return;
-  }
-
   if (!state.sessionRunning) return;
 
   if (event.key === 'Enter') {
@@ -163,7 +155,7 @@ function handleGlobalKeydown(event) {
     autoFillCurrentWord();
     return;
   }
-  if (event.key === ';') {
+  if (event.key.toLowerCase() === 'Escape') {
     event.preventDefault();
     replayCurrentWord();
     return;
@@ -185,7 +177,14 @@ function handleGlobalKeydown(event) {
   }
   if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault();
+    const target = currentWord();
+    const typedIndex = state.typedValue.length;
+    state.totalCharactersAttempted += 1;
+    if (typedIndex < target.length && event.key === target[typedIndex]) {
+      state.totalCorrectCharacters += 1;
+    }
     state.typedValue += event.key;
+    updateStaticStats();
     renderTypedValue();
   }
 }
@@ -313,7 +312,7 @@ function beginSessionNow() {
   updateStaticStats();
   updateProgress();
   setStatus('Listening');
-  elements.targetHint.textContent = 'Listen to the word, type it, then press Space. Press ; to repeat or Escape to end.';
+  elements.targetHint.textContent = 'Listen to the word, type it, then press Space.';
   renderTypedValue();
   speakCurrentWord();
 }
@@ -322,10 +321,11 @@ function renderTypedValue() {
   if (!state.sessionRunning) return;
   const typed = state.typedValue;
   const target = currentWord();
+  const safeTyped = escapeHtml(typed);
+  const safeTarget = escapeHtml(target);
 
   if (!typed) {
-    elements.typedWord.innerHTML = `<span class="typed-pending">${escapeHtml(target || '\u00A0')}</span>`;
-    elements.typedWord.className = 'typed-word';
+    elements.typedWord.innerHTML = '<span class="typed-pending">…</span>';
     setStatus('Listening');
     return;
   }
@@ -348,7 +348,7 @@ function renderTypedValue() {
     correctPart ? `<span class="typed-correct">${correctPart}</span>` : '',
     wrongTypedPart ? `<span class="typed-wrong">${wrongTypedPart}</span>` : '',
     pendingPart ? `<span class="typed-pending">${pendingPart}</span>` : '',
-  ].join('') || `<span class="typed-pending">${escapeHtml(target || '\u00A0')}</span>`;
+  ].join('') || safeTyped || safeTarget;
 
   if (exact) {
     elements.typedWord.className = 'typed-word success-outline';
@@ -374,9 +374,6 @@ function advanceWord() {
   const word = currentWord();
   if (!word) return;
 
-  state.totalCharactersAttempted += state.typedValue.length;
-  state.totalCorrectCharacters += countCorrectPrefix(state.typedValue, word);
-
   if (state.typedValue !== word) {
     recordMisspelling(word, state.typedValue);
   }
@@ -401,30 +398,6 @@ function advanceWord() {
   updateProgress();
   renderTypedValue();
   if (state.settings.autoSpeakNext) speakCurrentWord();
-}
-
-function endSessionEarly() {
-  if (!(state.sessionRunning || state.countdownActive)) return;
-
-  stopSpeech();
-  if (state.timerId) cancelAnimationFrame(state.timerId);
-  clearInterval(state.countdownTimer);
-
-  state.countdownActive = false;
-  state.sessionRunning = false;
-  state.sessionWords = [];
-  state.currentIndex = 0;
-  state.typedValue = '';
-  elements.resultsOverlay.classList.add('hidden');
-  elements.countdownText.classList.add('hidden');
-  setStatus('Ended');
-  elements.typedWord.textContent = 'Session ended';
-  elements.typedWord.className = 'typed-word neutral';
-  elements.targetHint.textContent = 'Press Tab to start or restart a new session.';
-  elements.progressText.textContent = '0 / 0';
-  elements.speedText.textContent = `0 ${state.settings.speedUnit.toUpperCase()}`;
-  elements.timerText.textContent = '0.00s';
-  updateStaticStats();
 }
 
 function finishSession() {
