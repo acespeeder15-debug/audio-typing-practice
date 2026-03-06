@@ -183,7 +183,14 @@ function handleGlobalKeydown(event) {
   }
   if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault();
+    const currentTarget = currentWord();
+    const nextIndex = state.typedValue.length;
+    state.totalCharactersAttempted += 1;
+    if (currentTarget[nextIndex] === event.key) {
+      state.totalCorrectCharacters += 1;
+    }
     state.typedValue += event.key;
+    updateStaticStats();
     renderTypedValue();
   }
 }
@@ -321,12 +328,9 @@ function renderTypedValue() {
   if (!state.sessionRunning) return;
   const typed = state.typedValue;
   const target = currentWord();
-  const safeTyped = escapeHtml(typed);
-  const safeTarget = escapeHtml(target);
-
   if (!typed) {
     elements.typedWord.className = 'typed-word';
-    elements.typedWord.innerHTML = target ? `<span class="typed-pending">${escapeHtml(target)}</span>` : '<span class="typed-pending"> </span>' ;
+    elements.typedWord.innerHTML = '<span class="typed-pending">&nbsp;</span>';
     setStatus('Listening');
     return;
   }
@@ -342,14 +346,12 @@ function renderTypedValue() {
 
   const correctPart = escapeHtml(target.slice(0, correctPrefixLength));
   const wrongTypedPart = escapeHtml(typed.slice(correctPrefixLength));
-  const pendingPart = escapeHtml(target.slice(Math.min(typed.length, target.length)));
   const exact = typed === target;
 
   elements.typedWord.innerHTML = [
     correctPart ? `<span class="typed-correct">${correctPart}</span>` : '',
     wrongTypedPart ? `<span class="typed-wrong">${wrongTypedPart}</span>` : '',
-    pendingPart ? `<span class="typed-pending">${pendingPart}</span>` : '',
-  ].join('') || safeTyped || safeTarget;
+  ].join('') || '<span class="typed-pending">&nbsp;</span>';
 
   if (exact) {
     elements.typedWord.className = 'typed-word success-outline';
@@ -374,9 +376,6 @@ function autoFillCurrentWord() {
 function advanceWord() {
   const word = currentWord();
   if (!word) return;
-
-  state.totalCharactersAttempted += state.typedValue.length;
-  state.totalCorrectCharacters += countCorrectPrefix(state.typedValue, word);
 
   if (state.typedValue !== word) {
     recordMisspelling(word, state.typedValue);
