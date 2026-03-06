@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Typing Practice</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Audio Typing Practice</div>
+      <nav class="topnav">
+        <a href="index.html" aria-current="page">Practice</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </header>
+
+    <main class="layout layout-home">
+      <aside class="panel controls-panel">
+        <h1>Audio Dictation Practice</h1>
+        <p class="muted">Currently starts in <strong>1 word mode</strong>, but the structure is ready for sentence mode later.</p>
+
+        <section class="stack">
+          <label for="wordList">Word list</label>
+          <textarea id="wordList" rows="12" spellcheck="false" placeholder="Enter one word per line, or separate with spaces/commas."></textarea>
+        </section>
+
+        <section class="grid two-col">
+          <div class="stack">
+            <label for="sessionLength">Session length</label>
+            <input id="sessionLength" type="number" min="1" step="1" value="10" />
+          </div>
+          <div class="stack checkbox-stack">
+            <label class="checkbox-row">
+              <input id="useWholeList" type="checkbox" />
+              <span>Use whole list</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="grid two-col">
+          <label class="checkbox-row">
+            <input id="randomizeOrder" type="checkbox" checked />
+            <span>Randomize order</span>
+          </label>
+          <label class="checkbox-row">
+            <input id="autoReplayOnWrong" type="checkbox" />
+            <span>Replay on wrong</span>
+          </label>
+        </section>
+
+        <section class="grid two-col">
+          <div class="stack">
+            <label for="modeSelect">Mode</label>
+            <select id="modeSelect">
+              <option value="word" selected>1 word mode</option>
+              <option value="sentence" disabled>Sentence mode later</option>
+            </select>
+          </div>
+          <div class="stack">
+            <label for="difficultyPreset">Difficulty preset</label>
+            <select id="difficultyPreset">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="challenge">Challenge</option>
+              <option value="speedrun">Speedrun</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="grid two-col">
+          <button id="startButton" class="primary">Start Session</button>
+          <button id="restartButton" type="button">Restart</button>
+        </section>
+
+        <section class="grid two-col">
+          <button id="repeatButton" type="button">Repeat Audio</button>
+          <button id="pasteSampleButton" type="button">Paste Sample List</button>
+        </section>
+
+        <section class="stack hotkeys-box muted small-text">
+          <div><strong>Hotkeys</strong></div>
+          <div><kbd>Tab</kbd> quick restart session</div>
+          <div><kbd>Enter</kbd> auto-fill current entry and exclude it from speed</div>
+          <div><kbd>Space</kbd> go next only if current entry is fully correct</div>
+          <div><kbd>R</kbd> repeat current audio</div>
+        </section>
+
+        <section class="panel subpanel stack">
+          <div class="section-title">Imported / saved list tools</div>
+          <div class="grid two-col">
+            <button id="exportSettingsButton" type="button">Export Settings</button>
+            <label class="file-button">
+              <input id="importSettingsInput" type="file" accept="application/json" hidden />
+              <span>Import Settings</span>
+            </label>
+          </div>
+        </section>
+      </aside>
+
+      <section class="practice-stage" aria-live="polite">
+        <div class="status-row">
+          <div id="sessionStatus" class="pill">Idle</div>
+          <div id="progressText" class="pill">0 / 0</div>
+          <div id="speedText" class="pill">0 WPM</div>
+          <div id="timerText" class="pill">0.00s</div>
+          <div id="countdownText" class="pill hidden">3</div>
+        </div>
+
+        <div class="center-wrap">
+          <div id="typedWord" class="typed-word neutral">Press start</div>
+          <div id="targetHint" class="target-hint">The spoken word is not shown here.</div>
+          <div id="metaHint" class="muted small-text">[Tab] Restart · [Enter] Auto-fill · [R] Repeat · [Space] Next</div>
+        </div>
+
+        <div id="resultsOverlay" class="results-overlay hidden">
+          <div class="panel results-card">
+            <h2>Session Complete</h2>
+            <div id="resultsSummary" class="results-grid"></div>
+            <div class="results-actions">
+              <button id="playAgainButton" class="primary">Play Again</button>
+              <button id="closeResultsButton" type="button">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="bottomPanel" class="bottom-panel panel compact-panel">
+          <div class="results-grid small-grid">
+            <div><span class="label">Typed words counted</span><strong id="countedWordsText">0</strong></div>
+            <div><span class="label">Auto-filled words</span><strong id="skippedWordsText">0</strong></div>
+            <div><span class="label">TTS time removed</span><strong id="ttsRemovedText">0.00s</strong></div>
+            <div><span class="label">Repeat penalties</span><strong id="replayPenaltyText">0.00s</strong></div>
+            <div><span class="label">Accuracy</span><strong id="accuracyText">100.00%</strong></div>
+            <div><span class="label">Common misspelling</span><strong id="commonMissText">—</strong></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

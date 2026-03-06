@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - Audio Typing Practice</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Audio Typing Practice</div>
+      <nav class="topnav">
+        <a href="index.html">Practice</a>
+        <a href="settings.html" aria-current="page">Settings</a>
+      </nav>
+    </header>
+
+    <main class="layout layout-settings">
+      <section class="panel settings-panel">
+        <h1>Settings</h1>
+        <p class="muted">Customize colors, fonts, voice settings, speed measurement, and practice behavior.</p>
+
+        <div class="settings-grid">
+          <div class="stack"><label for="pageBgColor">Page background color</label><input id="pageBgColor" type="color" /></div>
+          <div class="stack"><label for="panelBgColor">Panel color</label><input id="panelBgColor" type="color" /></div>
+          <div class="stack"><label for="panelAltBgColor">Alternate panel color</label><input id="panelAltBgColor" type="color" /></div>
+          <div class="stack"><label for="mainFontColor">Main font color</label><input id="mainFontColor" type="color" /></div>
+          <div class="stack"><label for="correctColor">Correct text color</label><input id="correctColor" type="color" /></div>
+          <div class="stack"><label for="wrongColor">Wrong text color</label><input id="wrongColor" type="color" /></div>
+          <div class="stack"><label for="accentColor">Accent color</label><input id="accentColor" type="color" /></div>
+          <div class="stack"><label for="mutedColor">Muted/helper color</label><input id="mutedColor" type="color" /></div>
+
+          <div class="stack"><label for="fontSize">Center font size (px)</label><input id="fontSize" type="number" min="18" max="180" step="1" /></div>
+          <div class="stack"><label for="fontFamily">Font family</label>
+            <select id="fontFamily">
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+              <option value="Tahoma, sans-serif">Tahoma</option>
+              <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Times New Roman, serif">Times New Roman</option>
+              <option value="Courier New, monospace">Courier New</option>
+              <option value="system-ui, sans-serif">System UI</option>
+            </select>
+          </div>
+
+          <div class="stack"><label for="speedUnit">Speed measure</label>
+            <select id="speedUnit"><option value="wpm">WPM</option><option value="cpm">CPM</option></select>
+          </div>
+          <div class="stack"><label for="voiceSelect">Voice</label><select id="voiceSelect"></select></div>
+
+          <div class="stack">
+            <label for="voiceRate">Voice speed</label>
+            <input id="voiceRate" type="range" min="0.5" max="2" step="0.1" />
+            <span id="voiceRateValue" class="muted small-text"></span>
+          </div>
+          <div class="stack">
+            <label for="voicePitch">Voice pitch</label>
+            <input id="voicePitch" type="range" min="0" max="2" step="0.1" />
+            <span id="voicePitchValue" class="muted small-text"></span>
+          </div>
+
+          <div class="stack">
+            <label for="countdownSeconds">Countdown seconds</label>
+            <input id="countdownSeconds" type="number" min="0" max="10" step="1" />
+          </div>
+          <div class="stack">
+            <label for="replayPenaltyMs">Repeat penalty (ms)</label>
+            <input id="replayPenaltyMs" type="number" min="0" max="10000" step="100" />
+          </div>
+
+          <div class="stack"><label for="difficultyPreset">Default difficulty preset</label>
+            <select id="difficultyPreset">
+              <option value="easy">Easy</option>
+              <option value="normal">Normal</option>
+              <option value="challenge">Challenge</option>
+              <option value="speedrun">Speedrun</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="stack checkbox-stack"><label class="checkbox-row"><input id="autoSpeakNext" type="checkbox" /><span>Auto speak next word</span></label></div>
+          <div class="stack checkbox-stack"><label class="checkbox-row"><input id="showBottomStats" type="checkbox" /><span>Show bottom stats panel</span></label></div>
+        </div>
+
+        <div class="settings-actions">
+          <button id="saveSettingsButton" class="primary">Save Settings</button>
+          <button id="resetSettingsButton" type="button">Reset Defaults</button>
+          <button id="exportSettingsButton" type="button">Export Settings</button>
+          <label class="file-button"><input id="importSettingsInput" type="file" accept="application/json" hidden /><span>Import Settings</span></label>
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <h2>Preview</h2>
+        <p class="muted">Preview updates when you save or import settings.</p>
+        <div id="settingsPreview" class="settings-preview"></div>
+        <div class="preview-legend small-text muted">Green = correct · Red = wrong · Accent = UI highlight</div>
+      </section>
+    </main>
+
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>
