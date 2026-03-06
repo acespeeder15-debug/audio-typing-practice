@@ -13,10 +13,9 @@ A static GitHub Pages-ready audio dictation trainer built with plain HTML, CSS, 
 - voice speed slider
 - voice pitch slider
 - countdown before session start
-- replay button and `;` hotkey
+- replay button and `R` hotkey
 - replay penalty system
-- `Tab` quick start / restart
-- `Escape` quick end session
+- `Tab` quick restart
 - `Enter` auto-fill current word and exclude it from speed
 - live character-by-character colored feedback
 - end-of-session stats screen
@@ -24,7 +23,7 @@ A static GitHub Pages-ready audio dictation trainer built with plain HTML, CSS, 
 - import/export settings
 - local settings + word list persistence
 - WPM or CPM
-- only the first play of each word has TTS time removed from timing
+- TTS speaking time removed from timing
 
 ## Files
 

@@ -117,5 +117,3 @@ kbd { background: rgba(255,255,255,.12); border-radius: 6px; padding: .1rem .42r
   .practice-stage { min-height: auto; }
   .typed-word { max-width: 95%; }
 }
-
-.typed-hidden { color: transparent; opacity: 0; user-select: none; }
