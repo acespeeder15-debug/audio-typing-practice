@@ -1,6 +1,8 @@
 [
   "english.json",
-  "english10k.json",
+  "english_10k.json",
   "french.json",
-  "french10k.json"
+  "french_10k.json",
+  "spanish.json",
+  "spanish_10k.json"
 ]
