@@ -128,7 +128,6 @@ function applyDifficultyPresetFromPracticePage() {
   const preset = DIFFICULTY_PRESETS[presetName];
   state.settings.difficultyPreset = presetName;
   if (preset) {
-    state.settings.voiceRate = preset.voiceRate;
     state.settings.countdownSeconds = preset.countdownSeconds;
     state.settings.replayPenaltyMs = preset.replayPenaltyMs;
   }
