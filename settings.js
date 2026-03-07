@@ -2,13 +2,9 @@ import {
   DEFAULT_SETTINGS,
   DIFFICULTY_PRESETS,
   applySettingsToDocument,
-  buildExportPayload,
   downloadTextFile,
-  loadSavedWordList,
   loadSettings,
-  parseImportedSettingsPayload,
   saveSettings,
-  saveWordList,
 } from './shared.js';
 
 const elements = {
@@ -83,8 +79,7 @@ function bindEvents() {
   });
 
   elements.exportSettingsButton.addEventListener('click', () => {
-    const payload = buildExportPayload(readForm(), loadSavedWordList());
-    downloadTextFile('audio-typing-settings.json', JSON.stringify(payload, null, 2));
+    downloadTextFile('audio-typing-settings.json', JSON.stringify(readForm(), null, 2));
   });
 
   elements.importSettingsInput.addEventListener('change', async (event) => {
@@ -92,14 +87,12 @@ function bindEvents() {
     if (!file) return;
     try {
       const imported = JSON.parse(await file.text());
-      const parsed = parseImportedSettingsPayload(imported);
-      settings = parsed.settings;
+      settings = { ...DEFAULT_SETTINGS, ...imported };
       fillForm(settings);
       saveSettings(settings);
-      if (parsed.wordList) saveWordList(parsed.wordList);
       applySettingsToDocument(settings);
       renderPreview();
-      alert(parsed.wordList ? 'Settings and word list imported.' : 'Settings imported.');
+      alert('Settings imported.');
     } catch {
       alert('Could not import settings file.');
     }

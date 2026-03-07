@@ -20,7 +20,7 @@ A static GitHub Pages-ready audio dictation trainer built with plain HTML, CSS, 
 - live character-by-character colored feedback
 - end-of-session stats screen
 - common misspelling tracking per session
-- import/export settings including the current saved word list
+- import/export settings
 - local settings + word list persistence
 - WPM or CPM
 - TTS speaking time removed from timing
