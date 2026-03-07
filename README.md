@@ -13,7 +13,7 @@ A static GitHub Pages-ready audio dictation trainer built with plain HTML, CSS, 
 - voice speed slider
 - voice pitch slider
 - countdown before session start
-- replay button and `R` hotkey
+- replay button and `;` hotkey
 - replay penalty system
 - `Tab` quick restart
 - `Enter` auto-fill current word and exclude it from speed
