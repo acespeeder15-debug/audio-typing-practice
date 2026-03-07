@@ -101,7 +101,25 @@ export function parseWordListFlexible(raw, mode = 'word') {
       .filter(Boolean);
   }
 
+  const monkeyTypeWords = extractMonkeytypeWords(text);
+  if (monkeyTypeWords.length > 0) return monkeyTypeWords;
+
   return parseWordList(raw);
+}
+
+function extractMonkeytypeWords(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.words)) {
+      return parsed.words
+        .map((word) => String(word).trim())
+        .filter(Boolean);
+    }
+  } catch {}
+
+  const wordsMatch = raw.match(/"words"\s*:\s*\[([\s\S]*?)\]/);
+  if (!wordsMatch) return [];
+  return Array.from(wordsMatch[1].matchAll(/"([^"]+)"/g), (match) => match[1].trim()).filter(Boolean);
 }
 
 export function shuffleArray(array) {

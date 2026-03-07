@@ -76,6 +76,7 @@ const state = {
   repeatCount: 0,
   restartCount: 0,
   misspellings: new Map(),
+  currentSpeechCountsForTiming: false,
 };
 
 init();
@@ -91,91 +92,6 @@ function init() {
   renderIdle();
 }
 
-
-async function loadPresetOptions() {
-  if (!elements.presetSelect) return;
-  const presets = await discoverPresetFiles();
-  for (const preset of presets) {
-    const option = document.createElement('option');
-    option.value = preset.path;
-    option.textContent = preset.label;
-    elements.presetSelect.appendChild(option);
-  }
-}
-
-async function discoverPresetFiles() {
-  const repoInfo = getGitHubRepoInfo();
-  if (repoInfo) {
-    try {
-      const response = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/contents/presets`);
-      if (response.ok) {
-        const items = await response.json();
-        return items
-          .filter((item) => item.type === 'file' && /\.json$/i.test(item.name))
-          .map((item) => ({
-            path: `presets/${item.name}`,
-            label: item.name.replace(/\.json$/i, ''),
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label));
-      }
-    } catch {
-      // Ignore and fall back below.
-    }
-  }
-
-  try {
-    const response = await fetch('presets/presets.json', { cache: 'no-store' });
-    if (response.ok) {
-      const items = await response.json();
-      return items
-        .filter((item) => typeof item === 'string' && /\.json$/i.test(item))
-        .map((name) => ({ path: `presets/${name}`, label: name.replace(/\.json$/i, '') }));
-    }
-  } catch {
-    // No local manifest available.
-  }
-
-  return [];
-}
-
-function getGitHubRepoInfo() {
-  const { hostname, pathname } = window.location;
-  if (!hostname.endsWith('github.io')) return null;
-  const owner = hostname.replace(/\.github\.io$/i, '');
-  const firstSegment = pathname.split('/').filter(Boolean)[0] || `${owner}.github.io`;
-  return { owner, repo: firstSegment };
-}
-
-async function handlePresetChange() {
-  const presetPath = elements.presetSelect?.value;
-  if (!presetPath) return;
-
-  try {
-    const response = await fetch(presetPath, { cache: 'no-store' });
-    if (!response.ok) throw new Error('Failed to load preset.');
-    const rawText = await response.text();
-    const parsedText = extractPresetWordList(rawText);
-    elements.wordList.value = parsedText;
-    saveWordList(parsedText);
-  } catch (error) {
-    alert('Could not load preset list.');
-  } finally {
-    elements.presetSelect.value = '';
-  }
-}
-
-function extractPresetWordList(rawText) {
-  try {
-    const data = JSON.parse(rawText);
-    if (Array.isArray(data?.words)) {
-      return data.words.join('\n');
-    }
-  } catch {
-    // Not JSON; fall back to raw text.
-  }
-  return rawText.trim();
-}
-
 function bindEvents() {
   elements.wordList.addEventListener('input', () => saveWordList(elements.wordList.value));
   elements.useWholeList.addEventListener('change', () => {
@@ -185,9 +101,9 @@ function bindEvents() {
   elements.startButton.addEventListener('click', startSession);
   elements.restartButton.addEventListener('click', restartSession);
   elements.repeatButton.addEventListener('click', replayCurrentWord);
-  elements.presetSelect?.addEventListener('change', handlePresetChange);
   elements.playAgainButton.addEventListener('click', restartSession);
   elements.closeResultsButton.addEventListener('click', () => elements.resultsOverlay.classList.add('hidden'));
+  elements.presetSelect.addEventListener('change', handlePresetSelectChange);
   elements.exportSettingsButton.addEventListener('click', () => {
     downloadTextFile('audio-typing-settings.json', JSON.stringify(state.settings, null, 2));
   });
@@ -219,6 +135,58 @@ function applyDifficultyPresetFromPracticePage() {
   saveSettings(state.settings);
 }
 
+async function loadPresetOptions() {
+  const presetFiles = await discoverPresetFiles();
+  for (const fileName of presetFiles) {
+    const option = document.createElement('option');
+    option.value = fileName;
+    option.textContent = fileName.replace(/\.json$/i, '');
+    elements.presetSelect.appendChild(option);
+  }
+}
+
+async function discoverPresetFiles() {
+  const fromDirectoryListing = await loadPresetFilesFromDirectoryListing();
+  if (fromDirectoryListing.length > 0) return fromDirectoryListing;
+
+  try {
+    const response = await fetch('./presets/manifest.json', { cache: 'no-store' });
+    if (!response.ok) return [];
+    const files = await response.json();
+    if (!Array.isArray(files)) return [];
+    return files.filter((fileName) => typeof fileName === 'string' && /\.json$/i.test(fileName));
+  } catch {
+    return [];
+  }
+}
+
+async function loadPresetFilesFromDirectoryListing() {
+  try {
+    const response = await fetch('./presets/', { cache: 'no-store' });
+    if (!response.ok) return [];
+    const html = await response.text();
+    const matches = Array.from(html.matchAll(/href=["']([^"']+\.json)["']/gi), (match) => match[1]);
+    return [...new Set(matches.map((href) => href.split('/').pop()).filter(Boolean))];
+  } catch {
+    return [];
+  }
+}
+
+async function handlePresetSelectChange() {
+  const fileName = elements.presetSelect.value;
+  if (!fileName) return;
+
+  try {
+    const response = await fetch(`./presets/${encodeURIComponent(fileName)}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to load preset.');
+    const presetText = await response.text();
+    elements.wordList.value = presetText;
+    saveWordList(elements.wordList.value);
+  } catch {
+    alert('Could not load preset file.');
+  }
+}
+
 function handleGlobalKeydown(event) {
   if (event.key === 'Tab') {
     event.preventDefault();
@@ -236,9 +204,9 @@ function handleGlobalKeydown(event) {
     autoFillCurrentWord();
     return;
   }
-  if (event.key.toLowerCase() === 'Escape') {
+  if (event.key === 'Escape') {
     event.preventDefault();
-    replayCurrentWord();
+    finishSession();
     return;
   }
   if (event.key === 'Backspace') {
@@ -256,9 +224,21 @@ function handleGlobalKeydown(event) {
     }
     return;
   }
+  if (event.key === ';') {
+    event.preventDefault();
+    replayCurrentWord();
+    return;
+  }
   if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault();
+    const currentTarget = currentWord();
+    const nextIndex = state.typedValue.length;
+    state.totalCharactersAttempted += 1;
+    if (currentTarget[nextIndex] === event.key) {
+      state.totalCorrectCharacters += 1;
+    }
     state.typedValue += event.key;
+    updateStaticStats();
     renderTypedValue();
   }
 }
@@ -320,6 +300,7 @@ function resetStateForNewSession() {
     currentUtterance: null,
     repeatCount: 0,
     misspellings: new Map(),
+    currentSpeechCountsForTiming: false,
   });
 }
 
@@ -388,18 +369,16 @@ function beginSessionNow() {
   setStatus('Listening');
   elements.targetHint.textContent = 'Listen to the word, type it, then press Space.';
   renderTypedValue();
-  speakCurrentWord();
+  speakCurrentWord(true);
 }
 
 function renderTypedValue() {
   if (!state.sessionRunning) return;
   const typed = state.typedValue;
   const target = currentWord();
-  const safeTyped = escapeHtml(typed);
-  const safeTarget = escapeHtml(target);
-
   if (!typed) {
-    elements.typedWord.innerHTML = '<span class="typed-pending">…</span>';
+    elements.typedWord.className = 'typed-word';
+    elements.typedWord.innerHTML = '<span class="typed-pending">&nbsp;</span>';
     setStatus('Listening');
     return;
   }
@@ -415,14 +394,12 @@ function renderTypedValue() {
 
   const correctPart = escapeHtml(target.slice(0, correctPrefixLength));
   const wrongTypedPart = escapeHtml(typed.slice(correctPrefixLength));
-  const pendingPart = escapeHtml(target.slice(Math.min(typed.length, target.length)));
   const exact = typed === target;
 
   elements.typedWord.innerHTML = [
     correctPart ? `<span class="typed-correct">${correctPart}</span>` : '',
     wrongTypedPart ? `<span class="typed-wrong">${wrongTypedPart}</span>` : '',
-    pendingPart ? `<span class="typed-pending">${pendingPart}</span>` : '',
-  ].join('') || safeTyped || safeTarget;
+  ].join('') || '<span class="typed-pending">&nbsp;</span>';
 
   if (exact) {
     elements.typedWord.className = 'typed-word success-outline';
@@ -448,9 +425,6 @@ function advanceWord() {
   const word = currentWord();
   if (!word) return;
 
-  state.totalCharactersAttempted += state.typedValue.length;
-  state.totalCorrectCharacters += countCorrectPrefix(state.typedValue, word);
-
   if (state.typedValue !== word) {
     recordMisspelling(word, state.typedValue);
   }
@@ -474,7 +448,7 @@ function advanceWord() {
 
   updateProgress();
   renderTypedValue();
-  if (state.settings.autoSpeakNext) speakCurrentWord();
+  if (state.settings.autoSpeakNext) speakCurrentWord(true);
 }
 
 function finishSession() {
@@ -547,13 +521,14 @@ function replayCurrentWord() {
   state.repeatCount += 1;
   state.replayPenaltyMsAccumulated += Number(state.settings.replayPenaltyMs) || 0;
   updateStaticStats();
-  speakCurrentWord();
+  speakCurrentWord(false);
 }
 
-function speakCurrentWord() {
+function speakCurrentWord(countForTiming = false) {
   const word = currentWord();
   if (!word || !('speechSynthesis' in window)) return;
   stopSpeech();
+  state.currentSpeechCountsForTiming = countForTiming;
 
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.rate = state.settings.voiceRate;
@@ -570,14 +545,18 @@ function speakCurrentWord() {
   };
   utterance.onend = () => {
     if (state.speechStartMs > 0) {
-      state.ttsDurationMs += performance.now() - state.speechStartMs;
+      if (state.currentSpeechCountsForTiming) {
+        state.ttsDurationMs += performance.now() - state.speechStartMs;
+        updateStaticStats();
+      }
       state.speechStartMs = 0;
-      updateStaticStats();
+      state.currentSpeechCountsForTiming = false;
     }
     if (state.typedValue === '') setStatus('Type the word');
   };
   utterance.onerror = () => {
     state.speechStartMs = 0;
+    state.currentSpeechCountsForTiming = false;
     setStatus('Speech error');
   };
 
@@ -589,6 +568,7 @@ function stopSpeech() {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   state.currentUtterance = null;
   state.speechStartMs = 0;
+  state.currentSpeechCountsForTiming = false;
 }
 
 function countCorrectPrefix(typed, target) {
